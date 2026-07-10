@@ -102,7 +102,7 @@ stages:
       displayName: Terraform Apply (infra + push secrets to Key Vault)
       inputs:
         provider: azurerm
-        command: apply
+        command: destroy
         workingDirectory: terraform
         commandOptions: >-
           -auto-approve
