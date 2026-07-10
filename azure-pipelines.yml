@@ -603,4 +603,10 @@ stages:
           echo ""
           echo "=================================================="
           echo " PROD ENVIRONMENT IS CURRENTLY RUNNING ON: $ACTIVE_COLOR_UPPER"
+          if [ -n "$INGRESS_IP" ]; then
+            echo " BROWSE TO THE APP AT: http://$INGRESS_IP/"
+          else
+            echo " Ingress controller has no public IP yet - re-run this stage or"
+            echo " check with: kubectl get svc -n ingress-nginx ingress-nginx-controller"
+          fi
           echo "=================================================="

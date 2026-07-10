@@ -423,6 +423,26 @@ az aks get-credentials --resource-group rg-<PREFIX> --name aks-<PREFIX> --overwr
 kubectl get nodes
 ```
 
+This cluster is created with **Azure RBAC for Kubernetes authorization**
+enabled (`terraform/modules/aks/main.tf` sets `azure_rbac_enabled = true`),
+so `kubectl` access is gated by an Azure role assignment on the cluster
+*resource* — being subscription `Owner` does **not** grant it (same
+control-plane vs. data-plane split as the Key Vault note above). If
+`kubectl get nodes` comes back `Forbidden: ... does not have access to the
+resource in Azure`, grant yourself a role on this specific cluster:
+
+```powershell
+az role assignment create `
+  --assignee "$(az ad signed-in-user show --query id -o tsv)" `
+  --role "Azure Kubernetes Service RBAC Cluster Admin" `
+  --scope "$(az aks show --resource-group rg-<PREFIX> --name aks-<PREFIX> --query id -o tsv)"
+```
+
+**This is per-cluster** — if you already did this for an earlier
+cluster (a previous stage, a renamed `<PREFIX>`), it does not carry over
+to a new one; re-run the command above with the new cluster's `--scope`.
+Role assignments can take a minute or two to propagate.
+
 > **metrics-server** (needed by the HPAs) is already built into AKS — no
 > installation step needed, by you or the pipeline.
 
@@ -507,6 +527,16 @@ az role assignment create `
 > az keyvault set-policy --name <KV_NAME> --object-id $SP_OBJECT_ID --secret-permissions get list set delete
 > ```
 
+> **This role assignment is scoped to one specific vault — it does not
+> carry over if you ever point `key_vault_name` at a different vault**
+> (a rename, a new environment/stage sharing the same pipeline, etc.).
+> Subscription-level `Owner`/`Contributor` on the service principal does
+> **not** substitute for it either: those built-in roles only grant Azure
+> **control-plane** `actions`, while Key Vault secret read/write is a
+> **data-plane** `dataAction` — a vault-scoped data role like `Key Vault
+> Secrets Officer` is the only thing that grants it. Re-run the command
+> above with the new vault's `--scope` any time `<KV_NAME>` changes.
+
 **AKS — admin access for `kubectl` from the pipeline:**
 
 ```powershell
@@ -563,18 +593,19 @@ successful run ends with:
 ```
 ==================================================
  PROD ENVIRONMENT IS CURRENTLY RUNNING ON: BLUE
+ BROWSE TO THE APP AT: http://<your ingress IP>/
 ==================================================
 ```
 
-Get the public IP and browse to the app:
+The **Final Validation** step already looks up the Ingress controller's
+public IP and prints the exact URL — no separate `kubectl` command needed.
+Open that URL in a browser and walk through: register → login → add card
+→ pay a bill → payment history.
 
-```powershell
-kubectl get svc -n ingress-nginx ingress-nginx-controller `
-  -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
-```
-
-Open `http://<that IP>/` in a browser and walk through: register → login →
-add card → pay a bill → payment history.
+(If that line instead says the controller has no public IP yet, the
+Azure Load Balancer is still provisioning — re-run the pipeline in a
+couple of minutes, or check directly with
+`kubectl get svc -n ingress-nginx ingress-nginx-controller`.)
 
 ---
 
@@ -631,6 +662,38 @@ line continuation. Either put the command on one line, or use PowerShell's
 backtick `` ` `` continuation (every multi-line command in this document
 already uses backticks for you).
 
+**`terraform apply` fails on every `azurerm_key_vault_secret` resource**
+with `403 Forbidden ... Action: 'Microsoft.KeyVault/vaults/secrets/getSecret/action' ...
+Assignment: (not found)'` — the pipeline's service principal is missing
+`Key Vault Secrets Officer` on **the vault your config currently points
+at**. This bites people most often after switching `key_vault_name` in
+§6.3 to a new/renamed vault (e.g. running this project again for a new
+stage) — the role assignment from §9.3 was granted on the *old* vault and
+doesn't automatically carry over. Check what the SP actually has:
+```powershell
+az role assignment list --assignee $SP_OBJECT_ID --all -o table
+```
+If the current `<KV_NAME>` isn't in the list, re-run the §9.3 `az role
+assignment create` command with `--scope` pointed at the current vault.
+Having `Owner`/`Contributor` on the subscription does **not** fix this —
+those roles don't grant Key Vault `dataActions`, only a vault-scoped data
+role does.
+
+**`kubectl get nodes`/`get svc` fails with `Forbidden: ... nodes is
+forbidden ... does not have access to the resource in Azure`** when you
+run it yourself (as opposed to the pipeline) — your own account is missing
+the `Azure Kubernetes Service RBAC Cluster Admin` role on **this specific
+cluster**, per the note in §8. Just like the Key Vault 403 above, this is
+scoped per-cluster and subscription `Owner`/`Contributor` doesn't cover
+it — most commonly hit right after standing up a new cluster (new
+`<PREFIX>`, new stage) when you already had access to an older one. Fix:
+```powershell
+az role assignment create `
+  --assignee "$(az ad signed-in-user show --query id -o tsv)" `
+  --role "Azure Kubernetes Service RBAC Cluster Admin" `
+  --scope "$(az aks show --resource-group rg-<PREFIX> --name aks-<PREFIX> --query id -o tsv)"
+```
+
 **The pipeline's "Get AKS Credentials" step fails** — the service
 principal from your ARM connection is missing the `Azure Kubernetes
 Service Cluster Admin Role` from §9.3. This is a separate role from the
@@ -671,6 +734,28 @@ document every issue hit building this project in detail, including root
 cause and fix — worth a read if you hit something not listed above.
 
 ---
+
+
+
+## Step 2: Log in to GoDaddy
+Log in to your GoDaddy account.
+Go to My Products.
+Find your domain.
+Click DNS or Manage DNS.
+
+You'll see a table with DNS records.
+
+Step 3: Add an A Record
+
+If you want the root domain:
+
+https://yourdomain.com
+
+Create:
+
+Type	Name	Value	TTL
+A	@	4.239.161.142	600 seconds (or Default)
+
 
 ## 13. Reference: every environment-specific value, in one table
 
