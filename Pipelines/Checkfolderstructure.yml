@@ -1,0 +1,55 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+
+# Checkout the GitHub repository
+- checkout: self
+  fetchDepth: 1
+
+# Display build information
+- script: |
+    echo "======================================"
+    echo "Azure DevOps Build Information"
+    echo "======================================"
+    echo "Repository : $(Build.Repository.Name)"
+    echo "Branch     : $(Build.SourceBranch)"
+    echo "Commit     : $(Build.SourceVersion)"
+    echo "Agent OS   : $(Agent.OS)"
+    echo "Working Dir: $(Build.SourcesDirectory)"
+    echo ""
+  displayName: "Display Build Information"
+
+# List directory structure
+- script: |
+    echo "======================================"
+    echo "Repository Folder Structure"
+    echo "======================================"
+    pwd
+    echo ""
+
+    ls -la
+
+    echo ""
+    echo "Recursive Directory Listing"
+    echo "======================================"
+    find . | sort
+  displayName: "List Repository Structure"
+
+# Show Git information
+- script: |
+    echo "======================================"
+    echo "Git Details"
+    echo "======================================"
+
+    git status
+    echo ""
+
+    git branch
+    echo ""
+
+    git log --oneline -5
+  displayName: "Verify Git Checkout"

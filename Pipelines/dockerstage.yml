@@ -1,0 +1,110 @@
+
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+# =========================================================
+# VARIABLES
+# =========================================================
+
+variables:
+
+  # Azure Container Registry Service Connection
+  acrServiceConnection: 'CredPay-ACR-SC'
+
+  # Image Tag
+  tag: '$(Build.BuildId)'
+
+  # Repositories in ACR
+  frontendRepository: 'credpay/frontend'
+  userRepository: 'credpay/user-service'
+  paymentRepository: 'credpay/payment-service'
+
+# =========================================================
+# STAGES
+# =========================================================
+
+stages:
+
+# =========================================================
+# STAGE 1 - BUILD & PUSH DOCKER IMAGES
+# =========================================================
+
+- stage: DockerBuild
+  displayName: Docker Build & Push
+
+  jobs:
+
+  - job: BuildPushImages
+    displayName: Build Docker Images
+
+    steps:
+
+    - checkout: self
+
+    #########################################################
+    # Display Build Information
+    #########################################################
+
+    - script: |
+        echo "Repository : $(Build.Repository.Name)"
+        echo "Branch     : $(Build.SourceBranch)"
+        echo "Build ID   : $(Build.BuildId)"
+        echo "Image Tag  : $(tag)"
+      displayName: Build Information
+
+    #########################################################
+    # FRONTEND
+    #########################################################
+
+    - task: Docker@2
+      displayName: Build & Push Frontend Image
+
+      inputs:
+        command: buildAndPush
+        containerRegistry: $(acrServiceConnection)
+        repository: $(frontendRepository)
+        dockerfile: frontend-react/Dockerfile
+        buildContext: frontend-react
+
+        tags: |
+          $(tag)
+          latest
+
+    #########################################################
+    # USER SERVICE
+    #########################################################
+
+    - task: Docker@2
+      displayName: Build & Push User Service Image
+
+      inputs:
+        command: buildAndPush
+        containerRegistry: $(acrServiceConnection)
+        repository: $(userRepository)
+        dockerfile: user-service/Dockerfile
+        buildContext: user-service
+
+        tags: |
+          $(tag)
+          latest
+
+    #########################################################
+    # PAYMENT SERVICE
+    #########################################################
+
+    - task: Docker@2
+      displayName: Build & Push Payment Service Image
+
+      inputs:
+        command: buildAndPush
+        containerRegistry: $(acrServiceConnection)
+        repository: $(paymentRepository)
+        dockerfile: payment-service/Dockerfile
+        buildContext: payment-service
+
+        tags: |
+          $(tag)
+          latest
