@@ -24,12 +24,12 @@ pool:
 variables:
 
   # Azure service connections
-  acrServiceConnection: 'CredPayS1-ACR-SC'
+  acrServiceConnection: 'CredPayACRS1-SC'
   azureServiceConnection: 'scnew2'
 
   # ACR resource name (not the service connection name above) - needed for
   # `az aks update --attach-acr`, which takes the registry's own name.
-  acrName: 'credstage1acr'
+  acrName: 'credpayacrs1'
 
   # Image tag - every build is pushed as both $(tag) and :latest
   tag: '$(Build.BuildId)'
@@ -40,8 +40,8 @@ variables:
   paymentRepository: 'credpay/payment-service'
 
   # Terraform remote state backend
-  tfStateRG: 'credstage1'
-  tfStateStorage: 'credstage1sa'
+  tfStateRG: 'CredPayRG'
+  tfStateStorage: 'credpaysas1'
   tfStateContainer: 'statefile'
   tfStateKey: 'credpay.terraform.tfstate'
 
@@ -55,8 +55,8 @@ variables:
   # bootstrap RG (same RG as the Terraform state storage account, not
   # rg-credpay). Terraform writes the Postgres secrets into it; the
   # pipeline reads them back below.
-  keyVaultName: 'credstage1kv'
-  keyVaultResourceGroup: 'credstage1'
+  keyVaultName: 'credpaykvs1'
+  keyVaultResourceGroup: 'CredPayRG'
 
 # =========================================================
 # STAGES

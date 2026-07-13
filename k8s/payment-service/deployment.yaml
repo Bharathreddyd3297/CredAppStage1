@@ -38,7 +38,7 @@ spec:
         - name: payment-service
           # Images live in the existing ACR (credproj.azurecr.io). AKS is
           # attached to it via: az aks update --attach-acr credproj
-          image: credstage1acr.azurecr.io/credpay/payment-service:latest
+          image: credpayacrs1.azurecr.io/credpay/payment-service:latest
           # "Always" because the tag is the mutable `:latest` - IfNotPresent
           # would let a node keep serving a stale cached image after a fresh
           # push + `kubectl rollout restart`.
