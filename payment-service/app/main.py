@@ -6,6 +6,7 @@ Run with:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.routes import router
 
@@ -25,6 +26,10 @@ app.add_middleware(
 )
 
 app.include_router(router)
+
+# Exposes GET /metrics (request count, latency histograms, in-progress
+# requests) - scraped by Prometheus (see observability/application-metrics/).
+Instrumentator().instrument(app).expose(app, include_in_schema=False)
 
 
 @app.get("/health", tags=["health"])

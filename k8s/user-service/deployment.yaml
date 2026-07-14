@@ -1,9 +1,10 @@
 # =====================================================================
 # User Service (Spring Boot / Java 21) - REST API on port 8080
 # =====================================================================
-# Probes are TCP-based: the app currently has NO spring-boot-starter-actuator,
-# so there is no /actuator/health endpoint. Add actuator (see Step 6) to
-# switch these to httpGet /actuator/health/{liveness,readiness}.
+# Probes remain TCP-based (unchanged) even though spring-boot-starter-actuator
+# was added for /actuator/prometheus (observability/application-metrics/) -
+# switching probes to httpGet /actuator/health/* is a separate, optional
+# change, out of scope here.
 # =====================================================================
 apiVersion: apps/v1
 kind: Deployment
@@ -29,6 +30,13 @@ spec:
       labels:
         app.kubernetes.io/name: user-service
         app.kubernetes.io/part-of: credpay
+      annotations:
+        # Picked up by Prometheus's existing "kubernetes-pods" scrape job
+        # (observability/prometheus/01-prometheus-server/prometheus.yaml) -
+        # that job has been wired up since Phase 1 but had 0 targets until now.
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/actuator/prometheus"
     spec:
       securityContext:
         runAsNonRoot: true

@@ -49,6 +49,20 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Actuator - exposes /actuator/prometheus, scraped by Prometheus
+             (see observability/application-metrics/) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Micrometer's Prometheus registry - formats actuator metrics as
+             Prometheus text exposition format -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
