@@ -26,9 +26,14 @@ spec:
       version: green
   strategy:
     type: RollingUpdate
+    # maxSurge: 0 / maxUnavailable: 1 - see k8s/user-service/deployment.yaml
+    # for why (cluster has no spare scheduling capacity for a surge Pod).
+    # Safe here specifically: this color is never the one taking live
+    # traffic while its own Deployment is being rolled - see "Frontend
+    # blue/green" in k8s/README.md.
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+      maxSurge: 0
+      maxUnavailable: 1
   template:
     metadata:
       labels:
