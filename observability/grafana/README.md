@@ -54,13 +54,20 @@ Browse to `http://localhost:3000`.
 
 ## Pre-built dashboards (`03-dashboards/`)
 
-| File | Dashboard |
-|---|---|
-| `credpay-node-status.json` | Node Exporter targets, CPU %, Memory %, Disk free per node |
-| `credpay-pod-status.json` | kube-state-metrics target, CredPay pod phase, available replicas, restarts, pods per namespace |
+| File | Dashboard | Panel types |
+|---|---|---|
+| `credpay-node-status.json` | Node Exporter targets, CPU %, Memory %, Disk free per node | stat, timeseries |
+| `credpay-pod-status.json` | kube-state-metrics target, CredPay pod phase, available replicas, restarts, pods per namespace | stat, table |
+| `credpay-node-resource-gauges.json` | Per-node CPU/Memory/Disk as radial gauges, network I/O as bar gauges, load average | gauge, bargauge, stat |
+| `credpay-kubernetes-workload-health.json` | Pods-by-namespace pie chart, Deployment availability, HPA headroom, restart counter, resource requests | piechart, bargauge, gauge, stat, table, timeseries |
+| `credpay-container-resource-usage.json` | Per-container CPU/memory (cAdvisor), memory-vs-limit % (OOMKill risk), CPU-vs-request %, network I/O, top 10 by memory | timeseries, gauge, bargauge, table |
+| `credpay-application-metrics.json` | user-service & payment-service request rate, error rate, p95 latency, JVM heap, DB pool | timeseries, gauge, stat |
 
-Both use the exact same queries as
-`observability/prometheus/cheatsheets/node-and-pod-status-walkthrough.md`.
+All six use queries documented in
+`observability/prometheus/cheatsheets/node-and-pod-status-walkthrough.md`,
+`observability/prometheus/cheatsheets/new-dashboards-promql-reference.md`
+(with a use case and a "what to verify" check per query), and
+`observability/application-metrics/documentation/application-metrics-queries.md`.
 
 ## Full step-by-step guide
 
@@ -72,5 +79,5 @@ they're made - plus a troubleshooting section, see
 ## What's deliberately not included
 
 No AlertManager integration yet (a later module). No custom dashboards
-beyond the two provided - `04-custom-dashboards/` is reserved for
+beyond the six provided - `04-custom-dashboards/` is reserved for
 whatever you build on top of these.

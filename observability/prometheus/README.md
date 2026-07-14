@@ -63,6 +63,33 @@ Then browse to `http://localhost:9090` - **Graph** to run PromQL,
 No Ingress, no LoadBalancer - Prometheus is an internal tool, reachable
 only via `port-forward`.
 
+## Resource footprint
+
+**Incident (2026-07-14):** deploying this stack pushed a small, 2-node
+AKS cluster (already at its cluster-autoscaler max node count) past its
+scheduling capacity - `user-service`'s rolling update needs headroom for
+a temporary 3rd Pod (`maxSurge: 1`), and there wasn't enough spare
+CPU/memory left after Prometheus + Node Exporter + kube-state-metrics +
+Grafana claimed their `requests`. The new Pod sat `Pending` with
+`FailedScheduling` / `NotTriggerScaleUp` until this was fixed.
+
+**Fix:** reduced `requests` only (not `limits`, so nothing lost its burst
+ceiling) across all four components:
+
+| Component | Before (cpu/mem) | After (cpu/mem) |
+|---|---|---|
+| Prometheus | 250m / 512Mi | 100m / 256Mi |
+| Node Exporter (per node) | 100m / 64Mi | 50m / 32Mi |
+| kube-state-metrics | 100m / 128Mi | 50m / 64Mi |
+| Grafana | 100m / 256Mi | 50m / 128Mi |
+
+On a 2-node cluster (Node Exporter runs once per node), that's a drop
+from **650m CPU / 1024Mi memory** to **300m CPU / 512Mi memory** in total
+requests - freeing roughly the 512Mi a stuck rollout needed. If this
+stack ever moves to a cluster with real scheduling headroom (or a higher
+autoscaler max), these can be raised again - the values above are a
+scheduling-pressure fix, not a "this is the correct size forever" claim.
+
 ---
 
 Supporting material spanning all of Prometheus lives in `labs/`
