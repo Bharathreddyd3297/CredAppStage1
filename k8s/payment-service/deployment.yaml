@@ -17,9 +17,15 @@ spec:
       app.kubernetes.io/name: payment-service
   strategy:
     type: RollingUpdate
+    # maxSurge: 0 / maxUnavailable: 1 - terminates the old Pod before
+    # starting the new one, so a rollout never needs headroom for a 3rd
+    # Pod. Changed from maxSurge:1/maxUnavailable:0 after this cluster's
+    # small, max-size node pool couldn't schedule the surge Pod (see
+    # observability/prometheus/README.md "Resource footprint" note).
+    # Tradeoff: briefly runs on 1 replica (not 2) during every rollout.
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+      maxSurge: 0
+      maxUnavailable: 1
   template:
     metadata:
       labels:
