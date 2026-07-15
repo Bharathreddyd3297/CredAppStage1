@@ -215,6 +215,15 @@ kubectl create secret generic credai-secrets \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 
+kubectl create secret generic credai-secrets `
+  --namespace credpay `
+  --from-literal=OPENAI_ENDPOINT="https://bharathreddy3297-0332-resource.services.ai.azure.com/api/projects/bharathreddy3297-0332/openai/v1/responses" `
+  --from-literal=OPENAI_KEY="4LyR0S7Tz7oFTKcA39yinJsgosZrpdbPWOumCVEyFsE9D0YXZG2aJQQJ99CGACYeBjFXJ3w3AAAAACOG8kqf" `
+  --from-literal=OPENAI_DEPLOYMENT="gpt-5-mini" `
+  --from-literal=OPENAI_API_VERSION="2025-08-07" `
+  --dry-run=client -o yaml | kubectl apply -f -
+
+
 The `--dry-run=client -o yaml | kubectl apply -f -` pattern makes this
 safe to run repeatedly — it creates the Secret the first time and updates
 it in place on every later run, without ever needing `kubectl delete`
@@ -352,38 +361,9 @@ az aks update --resource-group rg-credpays1 --name aks-credpays1 --attach-acr cr
 
 ## 15. Tearing everything down (and starting over)
 
-Useful for testing that this guide is actually complete and accurate —
-delete everything covered above, then redeploy from §2 using only this
-document. **This does not touch the git repository — only live cluster
-resources.** The core app (frontend/user-service/payment-service) is
-unaffected by any command below.
-
-```bash
-# ai-service and everything it created in credpay:
-kubectl delete -f k8s/ai-service/ingress.yaml --ignore-not-found
-kubectl delete -f k8s/ai-service/hpa.yaml --ignore-not-found
-kubectl delete -f k8s/ai-service/service.yaml --ignore-not-found
-kubectl delete -f k8s/ai-service/deployment.yaml --ignore-not-found
-kubectl delete secret credai-secrets -n credpay --ignore-not-found
-kubectl delete -f k8s/ai-service/configmap.yaml --ignore-not-found
-kubectl delete -f k8s/ai-service/rbac.yaml --ignore-not-found
-
-# The entire monitoring stack (Prometheus, Grafana, node-exporter,
-# kube-state-metrics) - deleting the namespace removes everything in it
-# at once, since prometheus.yaml created the namespace in the first place:
-kubectl delete namespace monitoring
-```
-
-Confirm the cleanup:
-
-```bash
-kubectl get all -n credpay        # only frontend/user-service/payment-service remain
-kubectl get ns                    # "monitoring" is gone
-```
-
-Then rebuild from [§2](#2-deploy-prometheus) onward. If every step in this
-guide is accurate, the platform comes back exactly as it was — same
-dashboards, same RBAC, same behavior — with only [§10](#10-create-the-azure-openai-secret)
-needing your real OpenAI values re-entered (Secrets are cluster state, not
-git state, so deleting the namespace/Secret does not affect anything
-committed to the repo).
+For a full, dedicated teardown runbook (individual removal steps, a
+one-line fast path, PVC/persistent-data notes, and verification), see the
+companion document: **`MONITORING-REMOVAL-GUIDE.md`**. It removes exactly
+what this guide builds — nothing in the core app (frontend/user-service/
+payment-service) or the git repository is ever touched — and ends by
+pointing back to [§2](#2-deploy-prometheus) of this guide to rebuild.
