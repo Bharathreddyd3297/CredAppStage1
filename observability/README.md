@@ -9,6 +9,9 @@ only: same ports, same probes, same Deployment strategy). Everything
 here is plain Kubernetes YAML (no Helm, no GitOps) built up one technology
 at a time, in the order below.
 
+> **For a full snapshot of what's actually deployed and every metric
+> being collected right now, see [`OBSERVABILITY-STATUS.md`](OBSERVABILITY-STATUS.md).**
+
 ---
 
 ## What is Observability
@@ -37,8 +40,8 @@ They're related, but not the same thing:
 | **Fails when** | The one thing nobody thought to alert on breaks | (Ideally) never - the data to investigate is already there |
 
 Monitoring is necessary but not sufficient - this roadmap builds
-monitoring (Prometheus, Grafana, AlertManager) as the foundation, then
-layers true observability and AIOps capability on top of it.
+monitoring (Prometheus, Grafana) as the foundation, then layers true
+observability and AIOps capability on top of it.
 
 ## Complete project roadmap
 
@@ -47,11 +50,11 @@ layers true observability and AIOps capability on top of it.
 | `prometheus/01-prometheus-server/` | Prometheus server | **Implemented** |
 | `prometheus/02-node-exporter/` | Node Exporter (node CPU/memory/disk) | **Implemented** |
 | `prometheus/03-kube-state-metrics/` | kube-state-metrics (K8s object state) | **Implemented** |
-| `prometheus/04-prometheus-rules/` | Recording & alerting rules | Planned |
+| `prometheus/04-prometheus-rules/` | Recording & alerting rules | Dropped (bundled with AlertManager) |
 | `grafana/` | Grafana dashboards | **Implemented** |
 | `application-metrics/` | Spring Boot + FastAPI custom metrics | **Implemented** |
-| `alertmanager/` | AlertManager | Planned |
-| `cloud-monitoring/` | Azure Monitor / Log Analytics / Container Insights | Planned |
+| `alertmanager/` | AlertManager | **Dropped for now** - assessed as not needed |
+| `cloud-monitoring/` | Azure Monitor / Log Analytics / Container Insights | **In progress** - assessment workbook underway |
 | `aiops/` | AI-assisted root cause analysis, prediction, remediation | Planned |
 
 Prometheus, Node Exporter, and kube-state-metrics are deployed together

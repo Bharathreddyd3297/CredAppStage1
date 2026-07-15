@@ -14,6 +14,7 @@ import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import AddCardRoundedIcon from '@mui/icons-material/AddCardRounded';
 import PaymentsRoundedIcon from '@mui/icons-material/PaymentsRounded';
 import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
+import SmartToyRoundedIcon from '@mui/icons-material/SmartToyRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import { auth } from '../services/api';
 import { goldGradient } from '../theme/theme';
@@ -25,6 +26,7 @@ export const NAV_ITEMS = [
   { label: 'Add Card', to: '/add-card', icon: <AddCardRoundedIcon /> },
   { label: 'Pay Bill', to: '/pay-bill', icon: <PaymentsRoundedIcon /> },
   { label: 'Payment History', to: '/payment-history', icon: <ReceiptLongRoundedIcon /> },
+  { label: '🤖 CredAI', to: '/credai', icon: <SmartToyRoundedIcon /> },
 ];
 
 function SidebarContent({ onNavigate }) {

@@ -14,6 +14,7 @@ import AddCardPage from '../pages/AddCardPage';
 import PayBillPage from '../pages/PayBillPage';
 import PaymentHistoryPage from '../pages/PaymentHistoryPage';
 import SuccessPage from '../pages/SuccessPage';
+import CredAIPage from '../pages/CredAIPage';
 
 /**
  * Shell layout for authenticated in-app routes: persistent sidebar,
@@ -65,6 +66,7 @@ export default function AppRoutes() {
         <Route path="/pay-bill" element={<PayBillPage />} />
         <Route path="/payment-history" element={<PaymentHistoryPage />} />
         <Route path="/success" element={<SuccessPage />} />
+        <Route path="/credai" element={<CredAIPage />} />
       </Route>
 
       {/* Defaults */}

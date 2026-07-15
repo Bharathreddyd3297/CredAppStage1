@@ -5,6 +5,7 @@ import axios from 'axios';
  *
  *  - userApi    -> Spring Boot User Service    (/api/users, /api/cards)
  *  - paymentApi -> FastAPI Payment Service     (/api/payment)
+ *  - aiApi      -> CredAI Service (FastAPI)     (/api/ai)
  *
  * Base URLs default to '' (relative). Behind the Kubernetes Ingress, the
  * frontend, user-service and payment-service are all reached through the
@@ -21,6 +22,7 @@ import axios from 'axios';
 
 const USER_BASE_URL = import.meta.env.VITE_USER_API_URL || '';
 const PAYMENT_BASE_URL = import.meta.env.VITE_PAYMENT_API_URL || '';
+const AI_BASE_URL = import.meta.env.VITE_AI_API_URL || '';
 
 export const userApi = axios.create({
   baseURL: USER_BASE_URL,
@@ -32,6 +34,15 @@ export const paymentApi = axios.create({
   baseURL: PAYMENT_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
   timeout: 15000,
+});
+
+// CredAI calls an LLM under the hood - a much longer timeout than the
+// other two instances, since a model response can genuinely take longer
+// than a typical CRUD call.
+export const aiApi = axios.create({
+  baseURL: AI_BASE_URL,
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 60000,
 });
 
 /**
@@ -116,4 +127,25 @@ export async function payBill({ userId, cardId, amount, upiId }) {
 export async function paymentHistory(userId) {
   const { data } = await paymentApi.get(`/api/payment/history/${userId}`);
   return data; // [{ transactionId, amount, status, createdAt }]
+}
+
+// --- CredAI Service endpoints -------------------------------------------
+export async function sendAiChatMessage({ message, history }) {
+  const { data } = await aiApi.post('/api/ai/chat', { message, history });
+  return data; // { reply, sources, use_case, generated_at }
+}
+
+export async function fetchAiRootCause(symptom) {
+  const { data } = await aiApi.post('/api/ai/root-cause', { symptom });
+  return data; // { symptom, analysis, evidence, generated_at }
+}
+
+export async function fetchAiClusterSummary() {
+  const { data } = await aiApi.get('/api/ai/cluster-summary');
+  return data; // { summary, healthy, pod_count, unhealthy_pod_count, deployment_count }
+}
+
+export async function fetchAiBusinessSummary() {
+  const { data } = await aiApi.get('/api/ai/business-summary');
+  return data; // { summary, payment_success_rate_percent, total_requests_last_hour }
 }
