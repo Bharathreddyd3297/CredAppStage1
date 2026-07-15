@@ -729,6 +729,21 @@ runs `helm upgrade --install` if it's missing, specifically to avoid this
 Service name than `ingress-nginx-controller`; check with
 `kubectl get svc -n ingress-nginx`.
 
+**Known issue: your subscription ID lives in `terraform/terraform.tfvars`,
+committed on purpose** — Azure DevOps secret pipeline variables can't be
+expanded into a `TerraformTask@5` `commandOptions` input (only into script
+`env:` mappings), so passing `subscription_id` as a pipeline variable
+silently resolves to empty and breaks `terraform apply` in CI. Committing
+the real value in `terraform.tfvars` is the accepted tradeoff for this
+classroom capstone (see §6.3). A subscription ID isn't a login credential,
+but Azure treats it as sensitive (it's the target for resource enumeration)
+— **if you ever fork this repo to make it public, that value stays in git
+history even after you stop tracking the file going forward.** Fully
+removing it requires rewriting history (`git filter-repo` or BFG
+Repo-Cleaner) and a force-push, which is destructive to anyone else's clone
+— do this only if you understand the tradeoff, and coordinate with anyone
+else who has cloned the repo first.
+
 **Full incident history:** `STAGE1-CHANGES.md` and `STAGE2-CHANGES.md`
 document every issue hit building this project in detail, including root
 cause and fix — worth a read if you hit something not listed above.
