@@ -50,7 +50,7 @@ stages:
 
               trivy --version
               mkdir -p reports
-              wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -O reporst/html.tpl
+              wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -O reports/html.tpl
             displayName: Install Trivy
 
           - script: |
