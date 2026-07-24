@@ -1,122 +1,158 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 # trigger:
 # - main
 
 pool:
   vmImage: ubuntu-latest
+
 stages:
 
-  - stage: BuildAndScan
-    displayName: Build Docker Images & Trivy Scan
+- stage: BuildAndScan
+  displayName: Build Docker Images & Trivy Scan
 
-    jobs:
+  jobs:
 
-    - job: BuildAndScan
-      displayName: Build Images and Scan with Trivy
+  - job: BuildAndScan
+    displayName: Build Images and Scan
 
-      pool:
-        vmImage: ubuntu-latest
+    steps:
 
-      steps:
+    - checkout: self
 
-      - checkout: self
+    ############################################################
+    # Build Docker Images
+    ############################################################
 
-      #########################################################
-      # Build Docker Images (Local Only)
-      #########################################################
+    - script: |
+        docker build -t frontend:$(Build.BuildId) ./frontend-react
+        docker build -t user-service:$(Build.BuildId) ./user-service
+        docker build -t payment-service:$(Build.BuildId) ./payment-service
 
-      - script: |
-          docker build -t frontend:$(Build.BuildId) ./frontend-react
-          docker build -t user-service:$(Build.BuildId) ./user-service
-          docker build -t payment-service:$(Build.BuildId) ./payment-service
-        displayName: Build Docker Images
+        docker images
+      displayName: Build Docker Images
 
-      #########################################################
-      # Install Trivy
-      #########################################################
+    ############################################################
+    # Install Trivy (Official Repository)
+    ############################################################
 
-      - script: |
-          sudo apt-get update
-          sudo apt-get install -y wget
+    - script: |
+        set -e
 
-          wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.71.2_Linux-64bit.deb
+        sudo apt-get update
 
-          sudo dpkg -i trivy_0.71.2_Linux-64bit.deb
-
-          trivy --version
-        displayName: Install Trivy
-
-      #########################################################
-      # Download HTML Template
-      #########################################################
-
-      - script: |
-          mkdir reports
-
+        sudo apt-get install -y \
           wget \
-          https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl \
-          -O reports/html.tpl
-        displayName: Download Trivy HTML Template
+          gnupg \
+          lsb-release \
+          apt-transport-https
 
-      #########################################################
-      # Scan Frontend Image
-      #########################################################
+        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | \
+        gpg --dearmor | \
+        sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
 
-      - script: |
-          trivy image frontend:$(Build.BuildId) \
-          --severity HIGH,CRITICAL \
-          --format template \
-          --template "@reports/html.tpl" \
-          -o reports/frontend-report.html
+        echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | \
+        sudo tee /etc/apt/sources.list.d/trivy.list
 
-          trivy image frontend:$(Build.BuildId) \
-          --format json \
-          -o reports/frontend-report.json
-        displayName: Scan Frontend Image
+        sudo apt-get update
 
-      #########################################################
-      # Scan User Service
-      #########################################################
+        sudo apt-get install -y trivy
 
-      - script: |
-          trivy image user-service:$(Build.BuildId) \
-          --severity HIGH,CRITICAL \
-          --format template \
-          --template "@reports/html.tpl" \
-          -o reports/user-report.html
+        trivy --version
+      displayName: Install Trivy
 
-          trivy image user-service:$(Build.BuildId) \
-          --format json \
-          -o reports/user-report.json
-        displayName: Scan User Service
+    ############################################################
+    # Create Reports Folder
+    ############################################################
 
-      #########################################################
-      # Scan Payment Service
-      #########################################################
+    - script: |
+        mkdir -p reports
+      displayName: Create Reports Folder
 
-      - script: |
-          trivy image payment-service:$(Build.BuildId) \
-          --severity HIGH,CRITICAL \
-          --format template \
-          --template "@reports/html.tpl" \
-          -o reports/payment-report.html
+    ############################################################
+    # Download HTML Template
+    ############################################################
 
-          trivy image payment-service:$(Build.BuildId) \
-          --format json \
-          -o reports/payment-report.json
-        displayName: Scan Payment Service
+    - script: |
+        wget \
+        https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl \
+        -O reports/html.tpl
 
-      #########################################################
-      # Publish Reports
-      #########################################################
+        ls reports
+      displayName: Download HTML Template
 
-      - task: PublishBuildArtifacts@1
-        displayName: Publish Trivy Reports
-        inputs:
-          PathtoPublish: reports
-          ArtifactName: TrivyReports
-          publishLocation: Container
+    ############################################################
+    # Scan Frontend Image
+    ############################################################
+
+    - script: |
+
+        trivy image frontend:$(Build.BuildId) \
+        --severity HIGH,CRITICAL \
+        --format template \
+        --template "@reports/html.tpl" \
+        -o reports/frontend-report.html
+
+        trivy image frontend:$(Build.BuildId) \
+        --format json \
+        -o reports/frontend-report.json
+
+      displayName: Scan Frontend Image
+
+    ############################################################
+    # Scan User Service
+    ############################################################
+
+    - script: |
+
+        trivy image user-service:$(Build.BuildId) \
+        --severity HIGH,CRITICAL \
+        --format template \
+        --template "@reports/html.tpl" \
+        -o reports/user-report.html
+
+        trivy image user-service:$(Build.BuildId) \
+        --format json \
+        -o reports/user-report.json
+
+      displayName: Scan User Service
+
+    ############################################################
+    # Scan Payment Service
+    ############################################################
+
+    - script: |
+
+        trivy image payment-service:$(Build.BuildId) \
+        --severity HIGH,CRITICAL \
+        --format template \
+        --template "@reports/html.tpl" \
+        -o reports/payment-report.html
+
+        trivy image payment-service:$(Build.BuildId) \
+        --format json \
+        -o reports/payment-report.json
+
+      displayName: Scan Payment Service
+
+    ############################################################
+    # Display Generated Reports
+    ############################################################
+
+    - script: |
+
+        echo "Generated Reports"
+
+        ls -R reports
+
+      displayName: Verify Reports
+
+    ############################################################
+    # Publish Reports
+    ############################################################
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Trivy Reports
+
+      inputs:
+        PathtoPublish: reports
+        ArtifactName: TrivyReports
+        publishLocation: Container
